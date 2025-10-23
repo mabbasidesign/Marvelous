@@ -1,0 +1,6 @@
+@Marvelous_HostAddress = http://localhost:5280
+
+GET {{Marvelous_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
