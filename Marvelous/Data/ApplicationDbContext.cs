@@ -1,6 +1,7 @@
 ﻿using Marvelous.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace Marvelous.Data
 {
@@ -15,10 +16,43 @@ namespace Marvelous.Data
         public DbSet<LocalUser> LocalUsers { get; set; }
         public DbSet<Villa> Villas { get; set; }
         public DbSet<VillaNumber> VillaNumbers { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Villa>(entity =>
+            {
+                entity.HasKey(v => v.Id);                 // تعیین کلید اصلی
+                entity.Property(v => v.Name)
+                      .IsRequired()                       // معادل [Required]
+                      .HasMaxLength(100);                 // معادل [MaxLength(100)]
+
+                entity.Property(v => v.Rate)
+                      .HasPrecision(10, 2);               // دقت عددی برای decimal
+            });
+
+            // Fluent API برای تنظیم مدل Villa
+            modelBuilder.Entity<Villa>(entity =>
+            {
+                entity.HasKey(v => v.Id); // کلید اصلی جدول
+
+                entity.Property(v => v.Name)
+                      .IsRequired()         // فیلد اجباری
+                      .HasMaxLength(100);   // حداکثر طول 100 کاراکتر
+
+                entity.Property(v => v.Rate)
+                      .HasPrecision(10, 2); // تنظیم دقت عددی برای decimal (مثلاً 12345678.90)
+
+                entity.Property(v => v.Details)
+                      .HasMaxLength(500);   // محدود کردن توضیحات به 500 کاراکتر (اختیاری)
+
+                entity.Property(v => v.ImageUrl)
+                      .HasMaxLength(300);   // محدود کردن آدرس تصویر
+            });
+
+
             modelBuilder.Entity<Villa>().HasData(
                 new Villa
                 {
@@ -30,7 +64,7 @@ namespace Marvelous.Data
                     Rate = 200,
                     Sqft = 550,
                     Amenity = "",
-                    CreatedDate = DateTime.Now
+                    CreatedDate = new DateTime(2025, 10, 23)
                 },
               new Villa
               {
@@ -42,8 +76,8 @@ namespace Marvelous.Data
                   Rate = 300,
                   Sqft = 550,
                   Amenity = "",
-                  CreatedDate = DateTime.Now
-              },
+                  CreatedDate = new DateTime(2025, 10, 23)
+              },    
               new Villa
               {
                   Id = 3,
@@ -54,7 +88,7 @@ namespace Marvelous.Data
                   Rate = 400,
                   Sqft = 750,
                   Amenity = "",
-                  CreatedDate = DateTime.Now
+                  CreatedDate = new DateTime(2025, 10, 23)
               },
               new Villa
               {
@@ -66,7 +100,7 @@ namespace Marvelous.Data
                   Rate = 550,
                   Sqft = 900,
                   Amenity = "",
-                  CreatedDate = DateTime.Now
+                  CreatedDate = new DateTime(2025, 10, 23)
               },
               new Villa
               {
@@ -78,7 +112,7 @@ namespace Marvelous.Data
                   Rate = 600,
                   Sqft = 1100,
                   Amenity = "",
-                  CreatedDate = DateTime.Now
+                  CreatedDate = new DateTime(2025, 10, 23)
               });
         }
     }

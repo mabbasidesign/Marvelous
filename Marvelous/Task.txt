@@ -1,0 +1,477 @@
+﻿Project Task Breakdown: Villa API Controller Implementation
+Task 1: Setup Controller and Dependencies
+Description:
+Create the TestAPIController with required dependencies.
+Technical Details:
+Use ControllerBase.
+Inject IVillaRepository and IMapper.
+Initialize _response with APIResponse.
+Add [ApiController] and [Route("api/v{version:apiVersion}/VillaAPI")].
+Add [ApiVersion("1.0")].
+Acceptance Criteria:
+Controller compiles successfully.
+_villaRepo and _mapper are available for all methods.
+_response object initialized correctly.
+
+Task 2: Implement GetVillas with Filtering, Paging, and Search
+Description:
+Implement GET /v1/VillaAPI that supports:
+Filtering by occupancy.
+Search by villa name.
+Paging using pageSize and pageNumber.
+Response caching.
+
+Technical Details:
+Use [HttpGet] and [ResponseCache(CacheProfileName = "Default30")].
+Parameters: occupancy, search, pageSize, pageNumber.
+If occupancy > 0, filter villas accordingly.
+If search is provided, filter by villa.Name.
+Add pagination header: X-Pagination.
+Map Villa to VillaDTO.
+Handle exceptions and set _response.IsSuccess = false if error occurs.
+
+Acceptance Criteria:
+Returns 200 OK with a list of VillaDTO.
+Pagination header present.
+Correct filtering and search behavior.
+Exceptions handled and returned in _response.ErrorMessages.
+
+Task 3: Implement GetVilla by ID
+Description:
+Implement GET /v1/VillaAPI/{id} to retrieve a villa by its ID.
+Technical Details:
+Use [HttpGet("{id:int}", Name = "GetVilla")].
+Validate id != 0, else return 400 BadRequest.
+Return 404 NotFound if villa not found.
+Map Villa to VillaDTO.
+Handle exceptions in _response.ErrorMessages.
+Acceptance Criteria:
+Returns 200 OK with VillaDTO.
+Returns 400 if ID is 0.
+Returns 404 if villa not found.
+Error handling implemented.
+
+Task 4: Implement CreateVilla
+Description:
+Implement POST /v1/VillaAPI to create a new villa.
+Technical Details:
+Use [HttpPost] with [Authorize(Roles = "admin")].
+Accept VillaCreateDTO.
+Check if villa with same name exists → return 400 BadRequest.
+Map DTO to entity and save via _villaRepo.CreateAsync.
+Return 201 Created with CreatedAtRoute("GetVilla").
+Handle exceptions in _response.ErrorMessages.
+Acceptance Criteria:
+Cannot create duplicate villa names.
+Returns 201 Created with created villa.
+Proper authorization required.
+Error handling implemented.
+
+Task 5: Implement DeleteVilla
+Description:
+Implement DELETE /v1/VillaAPI/{id} to remove a villa.
+Technical Details:
+Use [HttpDelete("{id:int}", Name = "DeleteVilla")] with [Authorize(Roles = "admin")].
+Validate id != 0.
+Return 404 NotFound if villa not found.
+Use _villaRepo.RemoveAsync to delete.
+Return 204 NoContent on success.
+Set _response.IsSuccess = true and handle exceptions.
+Acceptance Criteria:
+Returns 204 NoContent on successful deletion.
+Returns 400 for invalid ID.
+Returns 404 if villa does not exist.
+Only accessible by admin.
+
+Task 6: Implement UpdateVilla
+Description:
+Implement PUT /v1/VillaAPI/{id} to update a villa completely.
+Technical Details:
+Use [HttpPut("{id:int}", Name = "UpdateVilla")] with [Authorize(Roles = "admin")].
+Accept VillaUpdateDTO.
+Validate DTO not null and IDs match.
+Map DTO to entity and save via _villaRepo.UpdateAsync.
+Return 204 NoContent on success.
+Handle exceptions in _response.ErrorMessages.
+Acceptance Criteria:
+Updates villa correctly.
+Returns 400 BadRequest if validation fails.
+Only admin can perform update.
+Proper error handling implemented.
+
+Task 7: Implement UpdatePartialVilla
+Description:
+Implement PATCH /v1/VillaAPI/{id} for partial updates using JSON Patch.
+Technical Details:
+Use [HttpPatch("{id:int}", Name = "UpdatePartialVilla")].
+Accept JsonPatchDocument<VillaUpdateDTO>.
+Validate patchDTO not null and id != 0.
+Retrieve villa without tracking (tracked: false).
+Apply patch to DTO and map back to entity.
+Update using _villaRepo.UpdateAsync.
+Return 204 NoContent.
+Return 400 if model state invalid or villa not found.
+Acceptance Criteria:
+Partial updates applied correctly.
+Returns 204 NoContent on success.
+Validation errors return 400 BadRequest.
+
+Task 8: Implement API Response & Error Handling
+Description:
+Ensure all endpoints return a consistent APIResponse object.
+Technical Details:
+APIResponse includes: IsSuccess, Result, ErrorMessages, StatusCode.
+Catch all exceptions in each method.
+Populate _response.ErrorMessages with exception details.
+Acceptance Criteria:
+All endpoints return _response in success or failure.
+Exception details are logged in _response.ErrorMessages.
+Optional Tasks
+Configure Response Caching.
+Implement DTO validation attributes.
+Configure Swagger annotations for better API documentation.
+Unit tests for each method.
+
+Task 9: Implement Unit Tests for Controller
+Description: Write unit tests for each API method to ensure correctness and exception handling.
+Technical Details: Use xUnit or NUnit. Mock dependencies: IVillaRepository and IMapper.
+Test: Success cases. Invalid inputs (e.g., id = 0). Exceptions. Authorization restrictions.
+Acceptance Criteria: All endpoints have unit tests covering success and failure paths. 80%+ code coverage.
+
+Task 10: Implement Integration Tests
+Description: Verify the full API workflow with in-memory database or test database.
+Technical Details: Use WebApplicationFactory for in-memory API testing. Test Create → Get → Update → Delete workflows. Validate response codes and payloads.
+Acceptance Criteria: Integration tests verify end-to-end functionality.
+
+Task 11: Add Logging
+Description: Add proper logging for API requests, errors, and exceptions.
+Technical Details: Use ILogger<TestAPIController>. Log: Method entry/exit. Errors and exceptions with stack trace. Important events like "Villa created" or "Villa deleted".
+Acceptance Criteria: Errors and key actions logged. Logs can be viewed in console or persisted in a log file.
+
+Task 12: Implement Global Exception Handling
+Description: Move repetitive try/catch blocks to a global exception handler middleware.
+Technical Details: Use UseExceptionHandler or custom middleware. Return consistent APIResponse for unhandled exceptions. Log exceptions centrally.
+Acceptance Criteria: Controller methods no longer need individual try/catch. All unhandled exceptions return structured API response.
+
+Task 13: Configure Validation for DTOs
+Description: Ensure VillaCreateDTO and VillaUpdateDTO are validated automatically.
+Technical Details: Use [Required], [StringLength], [Range], etc. Enable ModelState.IsValid checks. Return validation errors consistently in API response.
+Acceptance Criteria: Invalid input results in 400 BadRequest with details.
+
+Task 14: Implement Caching
+Description: Enhance GetVillas with caching for performance improvement.
+Technical Details: Use ResponseCache or IMemoryCache. Cache results for 30 seconds (as configured). Ensure cache invalidation after create/update/delete.
+Acceptance Criteria: GET requests serve cached data if available. Cache invalidates correctly after modifications.
+
+Task 15: Implement Sorting
+Description: Allow the client to sort villas by Name, Price, or Occupancy.
+Technical Details: Add optional query parameter: sortBy. Use LINQ OrderBy or OrderByDescending. Combine with paging.
+Acceptance Criteria: GET endpoint can return sorted results by client request.
+
+Task 16: Implement Filtering by Multiple Criteria
+Description: Extend filtering for GetVillas by: Price range (minPrice & maxPrice). Availability. Amenity types.
+Technical Details: Add new query parameters. Combine multiple filters logically. Ensure performance for large datasets.
+Acceptance Criteria: GET endpoint supports multiple filters simultaneously.
+T
+ask 17: Swagger / OpenAPI Documentation
+Description: Document all endpoints with Swagger.
+Technical Details: Use Swashbuckle.AspNetCore. Add XML comments for each method. Include request/response examples for DTOs. Document status codes.
+Acceptance Criteria: API documentation visible at /swagger. All endpoints, DTOs, and status codes documented.
+
+Task 18: Implement Authorization & Roles
+Description: Ensure proper role-based access for endpoints.
+Technical Details: [Authorize(Roles = "admin")] for create/update/delete. [AllowAnonymous] or [Authorize] for GET endpoints. Test access with different roles.
+Acceptance Criteria: Unauthorized users cannot perform restricted operations.
+
+Task 19: Configure Rate Limiting
+Description: Protect API from excessive requests.
+Technical Details: Use AspNetCoreRateLimit or built-in middleware. Example: 100 requests per minute per IP. Handle rate-limit exceeded with 429 Too Many Requests.
+Acceptance Criteria: API enforces rate limits. Client receives clear error on limit exceeded.
+
+Task 20: Implement Database Seed & Migration Scripts
+Description: Ensure database has sample data and migrations for development.
+Technical Details: Use EF Core Migrations (dotnet ef migrations add). Seed data for testing villas. Scripts should run automatically in dev environment.
+Acceptance Criteria: Fresh database contains sample villas. Migrations applied without errors.
+
+Task 21: Logging & Monitoring Metrics
+Description: Add monitoring for performance and request metrics.
+Technical Details: Track requests per endpoint. Track response times. Optionally integrate with Application Insights or Prometheus/Grafana.
+Acceptance Criteria: Metrics visible in logs or monitoring dashboard.
+
+Task 22: Exception Unit Testing
+Description: Write unit tests specifically for exception scenarios.
+Technical Details: Mock _villaRepo to throw exceptions. Verify API returns _response.IsSuccess = false. Verify proper HTTP codes returned.
+Acceptance Criteria: All exception paths are covered by tests.
+
+Task 23: Implement DTO Mapping Validation
+Description: Ensure AutoMapper mappings are valid and tested.
+Technical Details: Write AutoMapper unit tests. Test mapping Villa <-> VillaDTO, VillaCreateDTO, VillaUpdateDTO.
+Acceptance Criteria: Mapping configurations validated. No runtime mapping errors.
+
+Task 24: Implement Soft Delete
+Description: Instead of hard-deleting villas, mark them as inactive for audit purposes.
+Technical Details: Add IsDeleted boolean to Villa entity. Modify _villaRepo queries to ignore IsDeleted = true. DeleteVilla sets IsDeleted = true instead of removing entity. Optionally log deletion date (DeletedAt).
+Acceptance Criteria: Villas can be “deleted” without losing data. GET endpoints do not return soft-deleted villas. Can restore soft-deleted villas if needed.
+
+Task 25: Add API Versioning
+Description: Support multiple API versions.
+Technical Details: Use Microsoft.AspNetCore.Mvc.Versioning. Decorate controller with [ApiVersion("1.0")]. Support query string or URL-based versioning: /api/v1/VillaAPI. Plan a second version (v2) with minor improvements.
+Acceptance Criteria: Requests to /v1/ use v1 controller. v2 controller can add new features without breaking v1. Swagger shows versions correctly.
+
+Task 26: Add Multiple Controllers
+Description: Split functionality into multiple controllers for separation of concerns.
+Technical Details: Example: VillaController (basic CRUD), BookingController (reservations), AmenityController (extra features). Shared services like _villaRepo can be injected via DI. Each controller has its own DTOs and endpoints.
+Acceptance Criteria: Controllers separated logically. Reuse repository and AutoMapper services. Endpoints documented in Swagger.
+
+Task 27: Add Business Logic Layer
+Description: Move business rules out of controller to a service layer.
+Technical Details: Create IVillaService and VillaService. Example rules: Max occupancy cannot exceed 10. Cannot create villa with duplicate name. Soft-deleted villas cannot be booked. Controllers call VillaService instead of repository directly.
+Acceptance Criteria: Controllers are thin (only call service). Business rules centralized in service. Unit tests for service layer.
+
+Task 28: Implement Redis Caching
+Description: Cache frequently-read data to improve performance.
+Technical Details: Use StackExchange.Redis. Cache villa list (GetVillas) for 30-60 seconds. Invalidate cache on create/update/delete. Consider using distributed cache in multi-server environments.
+Acceptance Criteria: GET endpoints return cached data when available. Cache invalidation works on data changes.
+
+Task 29: Implement RabbitMQ Messaging
+Description: Publish messages for villa events (create/update/delete).
+Technical Details: Use RabbitMQ.Client or MassTransit. Publish events: VillaCreated, VillaUpdated, VillaDeleted. Consumers can log, notify, or trigger further processes.
+Acceptance Criteria: Events published asynchronously on CRUD actions. Messages contain relevant DTO data.
+
+Task 30: Implement Kafka Messaging
+Description: Use Kafka for event streaming of villa changes.
+Technical Details: Use Confluent.Kafka. Produce events for VillaCreated, VillaUpdated, VillaDeleted. Optionally consume events in background service for analytics.
+Acceptance Criteria: Kafka topics receive villa events. Events can be consumed reliably by subscribers.
+
+Task 31: Add Background Services
+Description: Use background services for tasks like reporting, notifications, or scheduled cache refresh.
+Technical Details: Implement IHostedService or BackgroundService. Example: Daily report of all booked villas. Example: Refresh Redis cache every X minutes.
+Acceptance Criteria: Background tasks run on schedule. Logging of background tasks for debugging.
+
+Task 32: Implement CQRS Pattern
+Description: Separate read/write operations for scalability.
+Technical Details: Create VillaCommandService (Create/Update/Delete). Create VillaQueryService (Get/GetAll). Optional: Use MediatR for commands and queries. Use DTOs for queries and entities for commands.
+Acceptance Criteria: Read and write logic separated. Commands do not return entities directly (return status/ID). Queries optimized for read performance.
+
+Task 33: Implement Global Logging and Monitoring
+Description: Track requests, performance, and exceptions.
+Technical Details: Use Serilog or NLog. Log structured events: user, endpoint, request body, status code, execution time. Integrate with Application Insights, Seq, or ELK stack.
+Acceptance Criteria: Logs track all requests. Errors and exceptions captured centrally. Metrics visible for analysis.
+
+Task 34: Implement FluentValidation
+Description: Use FluentValidation for advanced DTO validation.
+Technical Details: Create validators for VillaCreateDTO and VillaUpdateDTO. Rules: Name not empty, Price > 0, MaxOccupancy ≤ 10. Integrate with ASP.NET Core pipeline.
+Acceptance Criteria: Invalid input returns structured error response. Validation rules are centralized and reusable.
+
+Task 35: Implement Health Checks
+Description: Provide API health monitoring.
+Technical Details: Use Microsoft.Extensions.Diagnostics.HealthChecks. Check database connectivity, Redis, RabbitMQ/Kafka availability. Endpoint: /health.
+Acceptance Criteria: Health endpoint returns 200 OK if all dependencies are healthy. Returns 503 Service Unavailable if any critical service fails.
+
+Task 36: Implement Pagination, Sorting, Filtering Enhancement
+Description: Make GetVillas fully dynamic for real-world usage.
+Technical Details: Support multiple filters: price range, occupancy, amenities, city. Sort by name, price, or rating. Use query string parameters for flexible combinations.
+Acceptance Criteria: GET endpoint supports multiple dynamic query options. Response includes pagination headers.
+
+Task 37: Implement JWT Authentication
+Description: Secure endpoints with JWT tokens.
+Technical Details: Use Microsoft.AspNetCore.Authentication.JwtBearer. Generate token on login. Restrict admin endpoints to JWT with role: admin. Optional: Include refresh tokens.
+Acceptance Criteria: Unauthorized requests get 401 Unauthorized. Admin-only endpoints enforce role.
+
+Task 38: Implement File Upload (Optional)
+Description: Allow villas to have images uploaded.
+Technical Details: Use IFormFile in controller. Store in local storage or cloud (Azure Blob Storage). Update villa entity with image URL.
+Acceptance Criteria: Image upload works with validation (size/type). Endpoint returns villa info with image URL.
+
+Task 39: Implement Advanced Error Handling with ProblemDetails
+Description: Return standardized error responses.
+Technical Details: Use ProblemDetails for 4xx/5xx responses. Include: title, status, detail, instance.
+Acceptance Criteria: Errors returned consistently across all endpoints.
+
+Task 40: Implement Feature Flags
+Description: Toggle new features without redeploying code.
+Technical Details: Use Microsoft.FeatureManagement. Example: Enable/disable v2 of controller. Integrate with configuration system.
+Acceptance Criteria: Features can be turned on/off dynamically. No breaking changes when toggled.
+
+
+Advanced API Methods for Practice
+1. Filtering & Query Enhancements
+GET /villas/by-occupancy/{occupancy} → Return villas with exact occupancy.
+GET /villas/by-price?min=100&max=500 → Filter villas by price range.
+GET /villas/search?keyword=beach → Search by name, description, or city.
+GET /villas/available?startDate=yyyy-mm-dd&endDate=yyyy-mm-dd → Check availability in a date range.
+
+2. Sorting & Pagination
+GET /villas/sort?sortBy=price&order=desc → Sort villas dynamically.
+GET /villas/paged?pageNumber=2&pageSize=10 → Implement robust pagination.
+Combine: GET /villas/filter?occupancy=4&minPrice=100&sortBy=name.
+
+3. Soft Delete & Restore
+DELETE /villas/{id} → Soft delete villa (set IsDeleted = true).
+PUT /villas/{id}/restore → Restore a soft-deleted villa.
+GET /villas/deleted → List all soft-deleted villas.
+
+4. Partial Updates & PATCH
+PATCH /villas/{id}/name → Update only the villa name.
+PATCH /villas/{id}/price → Update only the price.
+Use JsonPatchDocument for partial updates.
+
+5. Bulk Operations
+POST /villas/bulk → Create multiple villas at once.
+DELETE /villas/bulk → Soft-delete multiple villas.
+PATCH /villas/bulk → Bulk partial updates (like changing price of multiple villas).
+
+6. Business Logic Methods
+POST /villas/{id}/book → Book a villa (check availability, occupancy rules).
+GET /villas/{id}/is-available?startDate&endDate → Check availability for booking.
+GET /villas/most-booked → List villas with highest bookings.
+GET /villas/featured → Return villas marked as featured.
+
+7. File & Media Handling
+POST /villas/{id}/upload-image → Upload images for a villa.
+GET /villas/{id}/images → Return list of images for a villa.
+DELETE /villas/{id}/images/{imageId} → Delete villa image.
+
+8. Relationships & Nested Resources
+GET /villas/{id}/bookings → List all bookings for a villa.
+POST /villas/{id}/amenities → Add amenities to a villa.
+GET /villas/{id}/amenities → List amenities for a villa.
+DELETE /villas/{id}/amenities/{amenityId} → Remove amenity.
+
+9. Messaging & Event-Based Methods
+POST /villas/{id}/notify → Send notification when villa is booked (via RabbitMQ/Kafka).
+GET /villas/events → List events/messages related to villas (for debugging Kafka/RabbitMQ integration).
+
+10. Advanced Features & Utilities
+GET /villas/statistics → Return metrics: total villas, avg price, total bookings.
+GET /villas/report?format=pdf → Generate report of villas (PDF/Excel export).
+POST /villas/{id}/review → Add review/rating for a villa.
+GET /villas/{id}/reviews → List all reviews.
+GET /villas/recommendations → Return recommended villas based on criteria (occupancy, price, popularity).
+
+11. API Health & Diagnostics
+GET /health → Return API health.
+GET /diagnostics/logs → Return recent logs (for development).
+
+12. Versioned Endpoints
+GET /v2/villas → New version with extended fields (e.g., amenities, ratings).
+PATCH /v2/villas/{id}/dynamic-update → Accept dynamic JSON fields for patching.
+
+13. Caching & Performance Endpoints
+GET /villas/cached → Return villas from Redis cache.
+GET /villas/cache-refresh → Force refresh cache.
+
+14. Admin / Role-Based Methods
+PUT /villas/{id}/feature → Mark villa as featured (admin only).
+PUT /villas/{id}/status → Enable/disable villa (soft disable for non-admins).
+GET /villas/admin/audit → List all CRUD actions (logs).
+
+15. Optional Fun / Advanced API Practice
+POST /villas/simulate-booking → Run booking simulation for stress testing.
+GET /villas/nearest?lat=...&lng=... → Return nearest villas based on coordinates.
+POST /villas/import → Bulk import from JSON or CSV.
+GET /villas/export → Export villa data to JSON/CSV.
+
+Identity & Authentication Tasks for .NET API Practice
+1. Setup Identity & User Management
+
+Description:
+Configure ASP.NET Core Identity for your project.
+Technical Details:
+Use Microsoft.AspNetCore.Identity.
+Create ApplicationUser inheriting from IdentityUser.
+Configure EF Core Identity tables (AspNetUsers, AspNetRoles, etc.).
+Integrate Identity with your API DB context.
+Practice Goal:
+Understand how ASP.NET Core Identity works and how to store users securely.
+
+2. User Registration Endpoint
+POST /api/account/register → Register new users.
+Validate required fields: Email, Password, ConfirmPassword.
+Hash passwords automatically (Identity does this).
+Return success or errors.
+
+3. User Login & JWT Token
+POST /api/account/login → Authenticate users.
+Generate JWT token on successful login.
+Include claims: id, username, roles.
+Set expiration and signing key.
+Practice Goal:
+Learn how to secure APIs with JWT.
+
+4. Role Management
+POST /api/account/roles → Create new role (admin, user, etc.).
+PUT /api/account/roles/{userId} → Assign role to user.
+GET /api/account/roles/{userId} → List user roles.
+Practice [Authorize(Roles = "admin")] on sensitive endpoints.
+
+5. Password Management
+POST /api/account/change-password → Change password.
+POST /api/account/reset-password → Reset password using token.
+POST /api/account/forgot-password → Send reset email token (mock or console logging for practice).
+Practice Goal:
+Understand secure password workflows.
+
+6. Claims-Based Authorization
+Add custom claims to users, e.g., CanEditVilla = true.
+Protect endpoints based on claims:
+[Authorize(Policy = "CanEditVilla")]
+Create policy in Startup.cs or Program.cs.
+
+7. Refresh Tokens
+Implement JWT refresh token system.
+POST /api/account/refresh-token → Get a new access token using refresh token.
+Store refresh tokens securely in DB or cache.
+
+8. Account Lockout & Security
+Configure Identity options:
+Lockout after X failed login attempts.
+Minimum password length, complexity.
+GET /api/account/status/{userId} → Check lockout or active status.
+
+9. User Profile Management
+GET /api/account/profile → Return user profile info.
+PUT /api/account/profile → Update user profile (email, name, etc.).
+Secure endpoint with [Authorize].
+
+10. Admin-Only Endpoints
+GET /api/admin/users → List all users.
+DELETE /api/admin/users/{id} → Delete user (soft delete preferred).
+PUT /api/admin/users/{id}/role → Change user role.
+[Authorize(Roles = "admin")] required.
+
+11. Two-Factor Authentication (2FA)
+Enable TOTP (Google Authenticator) for accounts.
+Endpoints:
+POST /api/account/enable-2fa
+POST /api/account/verify-2fa
+Practice securing sensitive operations with 2FA.
+
+12. External Login / Social Auth (Optional)
+Integrate Google, Facebook, or GitHub login.
+Map external users to ApplicationUser.
+Issue JWT after successful external login.
+
+13. API Endpoint Authorization Testing
+Test:
+Anonymous users cannot access [Authorize] endpoints.
+Users without proper role cannot access admin endpoints.
+JWT tokens expire correctly.
+
+14. Identity & Business Logic Integration
+Link users to villas or bookings:
+GET /villas/my-bookings → Return bookings for logged-in user.
+POST /villas/{id}/book → Booking associated with UserId.
+Practice Goal:
+Tie identity with your business logic.
+
+15. Logging & Auditing for Identity
+Log:
+User logins/logouts.
+Failed login attempts.
+Role changes and password resets.
+Practice using ILogger or persist logs to DB.
+16. Soft Delete Users
+Instead of hard deleting users, mark IsDeleted = true.
+Update queries to exclude soft-deleted users.
+Practice PUT /api/admin/users/{id}/restore to restore users.
